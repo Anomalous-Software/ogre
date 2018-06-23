@@ -46,7 +46,8 @@ THE SOFTWARE.
 
 namespace Ogre {
     Win32EGLWindow::Win32EGLWindow(Win32EGLSupport *glsupport)
-        : EGLWindow(glsupport)
+        : EGLWindow(glsupport),
+		mWindowIsExternal(false)
     {
         mGLSupport = glsupport;
         mNativeDisplay = glsupport->getNativeDisplay();
@@ -74,27 +75,27 @@ namespace Ogre {
     void Win32EGLWindow::createNativeWindow( int &left, int &top, uint &width, uint &height, String &title )
     {
         // destroy current window, if any
-        if (mWindow)
+        if (mWindow && !mWindowIsExternal)
             destroy();
 
 		HINSTANCE hInst = NULL;
 		static const TCHAR staticVar;
 		GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, &staticVar, &hInst);
 
-        mWindow = 0;
         mClosed = false;        
         mColourDepth = mIsFullScreen? 32 : GetDeviceCaps(GetDC(0), BITSPIXEL);
-        HWND parent = 0;
-        bool vsync = false;
-        String border;
-        bool outerSize = false;
-        bool hwGamma = false;
-        int monitorIndex = -1;
-        HMONITOR hMonitor = NULL;
 
-
-        if (!mIsExternal)
+        if (!mIsExternal && !mWindowIsExternal)
         {
+			mWindow = 0;
+			HWND parent = 0;
+			bool vsync = false;
+			String border;
+			bool outerSize = false;
+			bool hwGamma = false;
+			int monitorIndex = -1;
+			HMONITOR hMonitor = NULL;
+
             DWORD         dwStyle = WS_VISIBLE | WS_CLIPCHILDREN;
             DWORD         dwStyleEx = 0;                    
             MONITORINFOEX monitorInfoEx;
@@ -315,6 +316,7 @@ namespace Ogre {
         ::EGLContext eglContext = 0;
         int left = 0;
         int top  = 0;
+		mWindow = 0;
 
         getLeftAndTopFromNativeWindow(left, top, width, height);
 
@@ -380,6 +382,12 @@ namespace Ogre {
             {
                 mIsExternalGLControl = StringConverter::parseBool(opt->second);
             }
+
+			if ((opt = miscParams->find("externalWindowHandle")) != end)
+			{
+				mWindow = (HWND)StringConverter::parseSizeT(opt->second);
+				mWindowIsExternal = true;
+			}
         }
 
         initNativeCreatedWindow(miscParams);
@@ -442,6 +450,10 @@ namespace Ogre {
         if (!mIsExternal)
         {
             createNativeWindow(left, top, width, height, title);
+			if (mWindowIsExternal)
+			{
+				mIsExternal = true;
+			}
         }
 
         mContext = createEGLContext();

@@ -37,7 +37,9 @@ THE SOFTWARE.
 #include "OgreGLESPixelFormat.h"
 #include "OgreGLESRenderSystem.h"
 
-#include <iomanip>  
+#include "OgreViewport.h"
+
+#include <iomanip>
 
 namespace Ogre {
     EAGLWindow::EAGLWindow(EAGLSupport *glsupport)

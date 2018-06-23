@@ -65,6 +65,12 @@ THE SOFTWARE.
 #       include <GLES2/gl2platform.h>
 #       include <GLES2/gl2.h>
 #       include <GLES2/gl2ext.h>
+//Hack for being able to use dds textures, cannot get this to work with android ndk versions.
+#		ifndef GL_EXT_texture_compression_s3tc
+#			define GL_EXT_texture_compression_s3tc 1
+#			define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT  0x83F2
+#			define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT  0x83F3
+#		endif /* GL_EXT_texture_compression_s3tc */
 #   endif
 #   if OGRE_PLATFORM == OGRE_PLATFORM_EMSCRIPTEN
 #       define gleswIsSupported(x,y) (false)

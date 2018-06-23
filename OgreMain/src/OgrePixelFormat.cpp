@@ -38,6 +38,81 @@ namespace {
 
 namespace Ogre {
 
+	//-----------------------------------------------------------------------
+	void PixelBox::setConsecutive()
+	{
+		if (PixelUtil::isCompressed(format))
+		{
+			rowPitch = PixelUtil::getMemorySize(getWidth(), 1, 1, format);
+			slicePitch = PixelUtil::getMemorySize(getWidth(), getHeight(), 1, format);
+		}
+		else
+		{
+			rowPitch = getWidth();
+			slicePitch = getWidth()*getHeight();
+		}
+	}
+	//-----------------------------------------------------------------------
+	size_t PixelBox::getRowSkip() const
+	{
+		if (PixelUtil::isCompressed(format))
+		{
+			return rowPitch - PixelUtil::getMemorySize(getWidth(), 1, 1, format);
+		}
+		else
+		{
+			return rowPitch - getWidth();
+		}
+	}
+	//-----------------------------------------------------------------------
+	size_t PixelBox::rowPitchAlwaysBytes() const
+	{
+		if (PixelUtil::isCompressed(format))
+		{
+			return rowPitch;
+		}
+		else
+		{
+			return rowPitch * PixelUtil::getNumElemBytes(format);
+		}
+	}
+	//-----------------------------------------------------------------------
+	size_t PixelBox::slicePitchAlwaysBytes(void) const
+	{
+		if (PixelUtil::isCompressed(format))
+		{
+			return slicePitch;
+		}
+		else
+		{
+			return slicePitch * PixelUtil::getNumElemBytes(format);
+		}
+	}
+	//-----------------------------------------------------------------------
+	size_t PixelBox::getSliceSkipAlwaysBytes() const
+	{
+		if (PixelUtil::isCompressed(format))
+		{
+			return getSliceSkip();
+		}
+		else
+		{
+			return getSliceSkip() * PixelUtil::getNumElemBytes(format);
+		}
+	}
+	//-----------------------------------------------------------------------
+	bool PixelBox::isConsecutive() const
+	{
+		if (PixelUtil::isCompressed(format))
+		{
+			return rowPitch == PixelUtil::getMemorySize(getWidth(), 1, 1, format) &&
+				slicePitch == PixelUtil::getMemorySize(getWidth(), getHeight(), 1, format);
+		}
+		else
+		{
+			return rowPitch == getWidth() && slicePitch == getWidth()*getHeight();
+		}
+	}
     //-----------------------------------------------------------------------
     size_t PixelBox::getConsecutiveSize() const
     {
@@ -136,9 +211,10 @@ namespace Ogre {
 
                 case PF_ETC1_RGB8:
                 case PF_ETC2_RGB8:
+                    return ((width + 3) / 4) * ((height + 3) / 4) * 8;
                 case PF_ETC2_RGBA8:
                 case PF_ETC2_RGB8A1:
-                    return ((width * height) >> 1);
+                    return ((width + 3) / 4) * ((height + 3) / 4) * 16;
                 case PF_ATC_RGB:
                     return ((width + 3) / 4) * ((height + 3) / 4) * 8;
                 case PF_ATC_RGBA_EXPLICIT_ALPHA:
@@ -155,6 +231,63 @@ namespace Ogre {
             return width*height*depth*getNumElemBytes(format);
         }
     }
+	uint32 PixelUtil::getCompressedBlockWidth(PixelFormat format, bool apiStrict)
+	{
+		switch (format)
+		{
+			// These formats work by dividing the image into 4x4 blocks, then encoding each
+			// 4x4 block with a certain number of bytes.
+		case PF_DXT1:
+		case PF_DXT2:
+		case PF_DXT3:
+		case PF_DXT4:
+		case PF_DXT5:
+		case PF_BC4_SNORM:
+		case PF_BC4_UNORM:
+		case PF_BC5_SNORM:
+		case PF_BC5_UNORM:
+		case PF_BC6H_SF16:
+		case PF_BC6H_UF16:
+		case PF_BC7_UNORM:
+		case PF_BC7_UNORM_SRGB:
+		case PF_ETC2_RGB8:
+		case PF_ETC2_RGBA8:
+		case PF_ETC2_RGB8A1:
+		case PF_ATC_RGB:
+		case PF_ATC_RGBA_EXPLICIT_ALPHA:
+		case PF_ATC_RGBA_INTERPOLATED_ALPHA:
+			return 4;
+
+		case PF_ETC1_RGB8:
+			return apiStrict ? 0 : 4;
+
+			// Size calculations from the PVRTC OpenGL extension spec
+			// http://www.khronos.org/registry/gles/extensions/IMG/IMG_texture_compression_pvrtc.txt
+			//  "Sub-images are not supportable because the PVRTC
+			//  algorithm uses significant adjacency information, so there is
+			//  no discrete block of texels that can be decoded as a standalone
+			//  sub-unit, and so it follows that no stand alone sub-unit of
+			//  data can be loaded without changing the decoding of surrounding
+			//  texels."
+			// In other words, if the user wants atlas, they can't be automatic
+		case PF_PVRTC_RGB2:
+		case PF_PVRTC_RGBA2:
+		case PF_PVRTC2_2BPP:
+		case PF_PVRTC_RGB4:
+		case PF_PVRTC_RGBA4:
+		case PF_PVRTC2_4BPP:
+			return 0;
+
+		default:
+			assert(!isCompressed(format));
+			return 1;
+		}
+	}
+	//-----------------------------------------------------------------------
+	uint32 PixelUtil::getCompressedBlockHeight(PixelFormat format, bool apiStrict)
+	{
+		return getCompressedBlockWidth(format, apiStrict);
+	}
     //-----------------------------------------------------------------------
     size_t PixelUtil::getNumElemBits( PixelFormat format )
     {
@@ -690,6 +823,7 @@ namespace Ogre {
 
         bulkPixelConversion(src, dst);
     }
+
     //-----------------------------------------------------------------------
     void PixelUtil::bulkPixelConversion(const PixelBox &src, const PixelBox &dst)
     {
@@ -702,6 +836,61 @@ namespace Ogre {
         {
             if(src.format == dst.format && src.left == 0 && src.top == 0 && dst.left == 0 && dst.top == 0)
             {
+				if (src.isConsecutive() && dst.isConsecutive())
+					memcpy(dst.data, src.data, src.getConsecutiveSize());
+				else
+				{
+					const size_t rowSize = PixelUtil::getMemorySize(src.getWidth(), 1, 1, src.format);
+					const uint32 blockWidth = PixelUtil::getCompressedBlockWidth(dst.format, false);
+					const uint32 blockHeight = PixelUtil::getCompressedBlockHeight(dst.format, false);
+
+					if (blockWidth == 0 || blockHeight == 0)
+					{
+						OGRE_EXCEPT(Exception::ERR_NOT_IMPLEMENTED,
+							"This format should be consecutive!",
+							"PixelUtil::bulkPixelConversion");
+					}
+
+					uint8 *srcptr = static_cast<uint8*>(src.data)
+						//If you merge this file in the future the following line was the original, but this did not calculate the correct size at the time this was written
+						//we needed to calculate the left offset in bytes
+						//+ (src.left + blockWidth - 1) / blockWidth +
+						+ PixelUtil::getMemorySize(src.left, 1, 1, src.format) +
+						(src.top + blockHeight - 1) / blockHeight * src.rowPitch +
+						src.front * src.slicePitch;
+					uint8 *dstptr = static_cast<uint8*>(dst.data)
+						//See comment above for src
+						//+ (dst.left + blockWidth - 1) / blockWidth +
+						+ PixelUtil::getMemorySize(dst.left, 1, 1, dst.format) +
+						(dst.top + blockHeight - 1) / blockHeight * dst.rowPitch +
+						dst.front * dst.slicePitch;
+
+					// Calculate pitches+skips in bytes
+					const size_t srcRowPitchBytes = src.rowPitch;
+					const size_t srcSliceSkipBytes = src.getSliceSkip();
+
+					const size_t dstRowPitchBytes = dst.rowPitch;
+					const size_t dstSliceSkipBytes = dst.getSliceSkip();
+
+					const size_t compressedSrcTop = (src.top + blockHeight - 1) / blockHeight;
+					const size_t compressedSrcBottom = (src.bottom + blockHeight - 1) / blockHeight;
+
+					for (size_t z = src.front; z<src.back; ++z)
+					{
+						for (size_t y = compressedSrcTop; y<compressedSrcBottom; ++y)
+						{
+							memcpy(dstptr, srcptr, rowSize);
+							srcptr += srcRowPitchBytes;
+							dstptr += dstRowPitchBytes;
+						}
+
+						srcptr += srcSliceSkipBytes;
+						dstptr += dstSliceSkipBytes;
+					}
+				}
+				return;
+
+				//Ogre Head Version, Need to test
                 // we can copy with slice granularity, useful for Tex2DArray handling
                 uint32 bytesPerSlice = getMemorySize(src.getWidth(), src.getHeight(), 1, src.format);
                 memcpy(

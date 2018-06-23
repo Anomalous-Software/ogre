@@ -405,6 +405,14 @@ namespace Ogre {
                                              int mipmapLevel = 0, int textureArrayIndex = 0,
                                              PixelFormat* format = NULL) {}
 
+		/** Returns whether or not auto mipmap generation is allowed.
+		*/
+		virtual bool getAllowMipmapGeneration(void) const { return mAllowMipmapGeneration; }
+
+		/** Set whether or not auto mipmap generation is enabled for this texture.
+		*/
+		virtual void setAllowMipmapGeneration(bool v) { mAllowMipmapGeneration = v; }
+
 
     protected:
         uint32 mHeight;
@@ -414,6 +422,7 @@ namespace Ogre {
         uint8 mNumRequestedMipmaps;
         uint8 mNumMipmaps;
         bool mMipmapsHardwareGenerated;
+		bool mAllowMipmapGeneration;
         float mGamma;
         bool mHwGamma;
         uint mFSAA;

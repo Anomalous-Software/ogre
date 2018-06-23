@@ -87,7 +87,7 @@ namespace Ogre {
 			rs->setConfigOption("RTT Preferred Mode", "FBO");
 			rs->setConfigOption("sRGB Gamma Conversion", "No");
 			rs->setConfigOption("Content Scaling Factor", "1.0");
-#ifdef __LP64__
+#if defined __LP64__ || !defined USE_CARBON
 			rs->setConfigOption("macAPI", "cocoa");
 #else
 			rs->setConfigOption("macAPI", "carbon");

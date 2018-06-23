@@ -33,7 +33,7 @@ using namespace Ogre;
 
 //-------------------------------------------------------------------------
 Timer::Timer()
-#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32 && defined(USE_SET_PROCESS_AFFINITY)
     : mTimerMask( 0 )
 #endif
 {
@@ -48,7 +48,7 @@ Timer::~Timer()
 //-------------------------------------------------------------------------
 bool Timer::setOption( const String & key, const void * val )
 {
-#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32 && defined(USE_SET_PROCESS_AFFINITY)
     if ( key == "QueryAffinityMask" )
     {
         // Telling timer what core to use for a timer read
@@ -77,7 +77,7 @@ bool Timer::setOption( const String & key, const void * val )
 //-------------------------------------------------------------------------
 void Timer::reset()
 {
-#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32 && defined(USE_SET_PROCESS_AFFINITY)
     // Get the current process core mask
     DWORD_PTR procMask;
     DWORD_PTR sysMask;
@@ -111,7 +111,7 @@ void Timer::reset()
     QueryPerformanceCounter(&mStartTime);
     mStartTick = GetTickCount();
 
-#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32 && defined(USE_SET_PROCESS_AFFINITY)
     // Reset affinity
     SetThreadAffinityMask(thread, oldMask);
 #endif
@@ -125,7 +125,7 @@ unsigned long Timer::getMilliseconds()
 {
     LARGE_INTEGER curTime;
 
-#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32 && defined(USE_SET_PROCESS_AFFINITY)
     HANDLE thread = GetCurrentThread();
 
     // Set affinity to the first core
@@ -135,7 +135,7 @@ unsigned long Timer::getMilliseconds()
     // Query the timer
     QueryPerformanceCounter(&curTime);
 
-#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32 && defined(USE_SET_PROCESS_AFFINITY)
     // Reset affinity
     SetThreadAffinityMask(thread, oldMask);
 #endif
@@ -171,7 +171,7 @@ unsigned long Timer::getMicroseconds()
 {
     LARGE_INTEGER curTime;
 
-#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32 && defined(USE_SET_PROCESS_AFFINITY)
     HANDLE thread = GetCurrentThread();
 
     // Set affinity to the first core
@@ -181,7 +181,7 @@ unsigned long Timer::getMicroseconds()
     // Query the timer
     QueryPerformanceCounter(&curTime);
 
-#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32 && defined(USE_SET_PROCESS_AFFINITY)
     // Reset affinity
     SetThreadAffinityMask(thread, oldMask);
 #endif

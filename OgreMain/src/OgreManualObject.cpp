@@ -331,6 +331,32 @@ namespace Ogre {
     }
 
     //-----------------------------------------------------------------------------
+    void ManualObject::binormal(const Vector3& tan)
+    {
+        binormal(tan.x, tan.y, tan.z);
+    }
+    //-----------------------------------------------------------------------------
+    void ManualObject::binormal(Real x, Real y, Real z)
+    {
+        if (!mCurrentSection)
+        {
+            OGRE_EXCEPT(Exception::ERR_INVALIDPARAMS,
+                "You must call begin() before this method",
+                "ManualObject::binormal");
+        }
+        if (mFirstVertex && !mCurrentUpdating)
+        {
+            // defining declaration
+            mCurrentSection->getRenderOperation()->vertexData->vertexDeclaration
+                ->addElement(0, mDeclSize, VET_FLOAT3, VES_BINORMAL);
+            mDeclSize += VertexElement::getTypeSize(VET_FLOAT3);
+        }
+        mTempVertex.binormal.x = x;
+        mTempVertex.binormal.y = y;
+        mTempVertex.binormal.z = z;
+    }
+
+    //-----------------------------------------------------------------------------
     void ManualObject::textureCoord(Real u)
     {
         if (!mCurrentSection)
@@ -607,6 +633,11 @@ namespace Ogre {
                 *pFloat++ = mTempVertex.tangent.x;
                 *pFloat++ = mTempVertex.tangent.y;
                 *pFloat++ = mTempVertex.tangent.z;
+                break;
+            case VES_BINORMAL:
+                *pFloat++ = mTempVertex.binormal.x;
+                *pFloat++ = mTempVertex.binormal.y;
+                *pFloat++ = mTempVertex.binormal.z;
                 break;
             case VES_TEXTURE_COORDINATES:
                 dims = VertexElement::getTypeCount(elem.getType());

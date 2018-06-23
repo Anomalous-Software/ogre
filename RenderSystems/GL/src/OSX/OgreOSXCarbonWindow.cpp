@@ -27,7 +27,7 @@ THE SOFTWARE.
 */
 
 // 64-bit Mac OS X doesn't support Carbon UI API
-#ifndef __LP64__
+#if !defined __LP64__ && defined USE_CARBON
 
 #include "OgreOSXCarbonWindow.h"
 #include "OgreRoot.h"

@@ -28,6 +28,7 @@ THE SOFTWARE.
 
 #include "OgreErrorDialog.h"
 #include <iostream>
+#include <iostream>
 
 namespace Ogre
 {

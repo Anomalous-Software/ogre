@@ -102,6 +102,14 @@ namespace Ogre {
             fullPath = macFrameworksPath() + "/" + name + ".framework/" + name;
         }
         else { // absolute path, like "/Library/Frameworks/OgreTerrain.framework"
+            
+            //Search for special bundle path substitution path
+            size_t frameworksPathPos = name.rfind("@macBundlePath");
+            if(frameworksPathPos != String::npos)
+            {
+                name.replace(frameworksPathPos, 14, macBundlePath());
+            }
+            
             size_t lastSlashPos = name.find_last_of('/');
             size_t extensionPos = name.rfind(".framework");
 

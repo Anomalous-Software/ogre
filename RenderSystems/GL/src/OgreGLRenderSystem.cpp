@@ -548,6 +548,10 @@ namespace Ogre {
 #endif
                     rsc->setCapability(RSC_TEXTURE_COMPRESSION_DXT);
             }
+			if (GLEW_ARB_texture_compression_rgtc)
+			{
+				rsc->setCapability(RSC_TEXTURE_COMPRESSION_BC4_BC5);
+			}
             // Check for vtc compression
             if(GLEW_NV_texture_compression_vtc)
             {

@@ -350,32 +350,34 @@ namespace Ogre {
         */
         size_t slicePitch;
         
+		/// Returns rowPitch, but always in bytes.
+		size_t rowPitchAlwaysBytes(void) const;
+
+		/// Returns slicePitch, but always in bytes.
+		size_t slicePitchAlwaysBytes(void) const;
+
         /** Set the rowPitch and slicePitch so that the buffer is laid out consecutive 
             in memory.
         */        
-        void setConsecutive()
-        {
-            rowPitch = getWidth();
-            slicePitch = getWidth()*getHeight();
-        }
+		void setConsecutive();
         /** Get the number of elements between one past the rightmost pixel of 
             one row and the leftmost pixel of the next row. (IE this is zero if rows
             are consecutive).
         */
-        size_t getRowSkip() const { return rowPitch - getWidth(); }
+		size_t getRowSkip() const;
         /** Get the number of elements between one past the right bottom pixel of
             one slice and the left top pixel of the next slice. (IE this is zero if slices
             are consecutive).
         */
         size_t getSliceSkip() const { return slicePitch - (getHeight() * rowPitch); }
 
+		/// @see getSliceSkip, but value is always in bytes.
+		size_t getSliceSkipAlwaysBytes() const;
+
         /** Return whether this buffer is laid out consecutive in memory (ie the pitches
             are equal to the dimensions)
         */        
-        bool isConsecutive() const 
-        { 
-            return rowPitch == getWidth() && slicePitch == getWidth()*getHeight(); 
-        }
+		bool isConsecutive() const;
         /** Return the size (in bytes) this image would take if it was
             laid out consecutive in memory
         */
@@ -450,6 +452,10 @@ namespace Ogre {
                 case, this does serious magic.
         */
         static size_t getMemorySize(uint32 width, uint32 height, uint32 depth, PixelFormat format);
+
+		static uint32 getCompressedBlockWidth(PixelFormat format, bool apiStrict);
+		//-----------------------------------------------------------------------
+		static uint32 getCompressedBlockHeight(PixelFormat format, bool apiStrict);
         
         /** Returns the property flags for this pixel format
           @return

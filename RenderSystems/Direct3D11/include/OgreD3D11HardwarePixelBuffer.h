@@ -4,7 +4,7 @@ This source file is part of OGRE
 (Object-oriented Graphics Rendering Engine)
 For the latest info, see http://www.ogre3d.org/
 
-Copyright (c) 2000-2016 Torus Knot Software Ltd
+Copyright (c) 2000-2014 Torus Knot Software Ltd
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ struct ID3D11Resource;
 
 namespace Ogre {
 
-    class _OgreD3D11Export D3D11HardwarePixelBuffer : public HardwarePixelBuffer
+    class D3D11HardwarePixelBuffer: public HardwarePixelBuffer
     {
     protected:
         /// Lock a box
@@ -49,14 +49,18 @@ namespace Ogre {
         D3D11Device & mDevice;
 
         D3D11Texture * mParentTexture;
-        const UINT mFace;
-        const UINT mMipLevel;
+        size_t mSubresourceIndex;
 
         // if the usage is static - alloc at lock then use device UpdateSubresource when unlock and free memory
-        vector<int8>::type mDataForStaticUsageLock; 
+        int8 * mDataForStaticUsageLock; 
+
+        size_t mFace;
 
         Image::Box mLockBox;
+        PixelBox mCurrentLock;
         LockOptions mCurrentLockOptions;
+
+        D3D11_BOX OgreImageBoxToDx11Box(const Image::Box &inBox) const;
 
         /// Render targets
         typedef vector<RenderTexture*>::type SliceTRT;
@@ -64,17 +68,21 @@ namespace Ogre {
 
         void createStagingBuffer();
         bool mUsingStagingBuffer;
-        ComPtr<ID3D11Resource> mStagingBuffer;
+        ID3D11Resource *mStagingBuffer;
         
         void _map(ID3D11Resource *res, D3D11_MAP flags, PixelBox & box);
-        void _mapstagingbuffer(D3D11_MAP flags, PixelBox &box);
-
+        void *_mapstagingbuffer(D3D11_MAP flags, PixelBox & box);
+        void *_mapstaticbuffer(PixelBox lock);
         void _unmap(ID3D11Resource *res);
         void _unmapstagingbuffer(bool copyback = true);
         void _unmapstaticbuffer();
+
+		//Texture copying
+		ID3D11Texture2D* mStagingTexture;
+		DXGI_FORMAT mStagingTextureFormat;
     public:
-        D3D11HardwarePixelBuffer(D3D11Texture * parentTexture, D3D11Device & device, UINT mipLevel,
-            size_t width, size_t height, size_t depth, UINT face, PixelFormat format, HardwareBuffer::Usage usage);
+        D3D11HardwarePixelBuffer(D3D11Texture * parentTexture, D3D11Device & device, size_t subresourceIndex,
+            size_t width, size_t height, size_t depth, size_t face, PixelFormat format, HardwareBuffer::Usage usage);
 
         /// @copydoc HardwarePixelBuffer::blit
         void blit(const HardwarePixelBufferSharedPtr &src, const Image::Box &srcBox, const Image::Box &dstBox);
@@ -104,10 +112,28 @@ namespace Ogre {
         }
 
         D3D11Texture * getParentTexture() const;
+        size_t getSubresourceIndex() const;
+        size_t getFace() const;
 
-        UINT getFace() const;
-        UINT getSubresourceIndex(size_t box_front) const;
-        D3D11_BOX getSubresourceBox(const Image::Box &box) const;
+		/// Enable or disable optimized readback for this texture. This enables the use of
+		/// blitToStaging and blitStagingToMemory below.
+		void setOptimizedReadbackEnabled(bool enabled);
+
+		/// Returns true if optimized readback is enabled, false if disabled.
+		bool isOptimizedReadbackEnabled()
+		{
+			return mStagingTexture != NULL;
+		}
+
+		/// Phase 1 of an optimized readback, this will blit from gpu memory to staging
+		/// memory, ideally then on a later frame you call blitStagingToMemory to get the
+		/// texture from staging to main memory very quickly. Will not work if isOptimizedReadbackEnabled
+		/// is false.
+		void blitToStaging();
+
+		/// Phase 2 of an optimized readback, this blits from the staging memory to
+		/// main memory, will not work if isOptimizedReadbackEnabled is false.
+		void blitStagingToMemory(const PixelBox &dst);
     };
 };
 #endif

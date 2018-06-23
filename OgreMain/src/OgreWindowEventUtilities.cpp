@@ -80,7 +80,7 @@ void WindowEventUtilities::messagePump()
         GLXProc(*win, event);
         }
     }
-#elif OGRE_PLATFORM == OGRE_PLATFORM_APPLE && !defined __OBJC__ && !defined __LP64__
+#elif OGRE_PLATFORM == OGRE_PLATFORM_APPLE && !defined __OBJC__ && !defined __LP64__ && defined USE_CARBON
     // OSX Message Pump
     EventRef event = NULL;
     EventTargetRef targetWindow;
@@ -362,7 +362,7 @@ void GLXProc( Ogre::RenderWindow *win, const XEvent &event )
         break;
     } //End switch event.type
 }
-#elif OGRE_PLATFORM == OGRE_PLATFORM_APPLE && !defined __OBJC__ && !defined __LP64__
+#elif OGRE_PLATFORM == OGRE_PLATFORM_APPLE && !defined __OBJC__ && !defined __LP64__ && defined USE_CARBON
 //--------------------------------------------------------------------------------//
 namespace Ogre {
 OSStatus WindowEventUtilities::_CarbonWindowHandler(EventHandlerCallRef nextHandler, EventRef event, void* wnd)

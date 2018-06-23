@@ -107,6 +107,26 @@ namespace Ogre {
         void blit(const HardwarePixelBufferSharedPtr &src, const Image::Box &srcBox, const Image::Box &dstBox);
         /// Blitting implementation
         void blitFromTexture(GLTextureBuffer *src, const Image::Box &srcBox, const Image::Box &dstBox);
+
+		/// Enable or disable optimized readback for this texture. This enables the use of
+		/// blitToStaging and blitStagingToMemory below.
+		void setOptimizedReadbackEnabled(bool enabled);
+
+		/// Returns true if optimized readback is enabled, false if disabled.
+		bool isOptimizedReadbackEnabled()
+		{
+			return mOptimizedReadbackEnabled;
+		}
+
+		/// Phase 1 of an optimized readback, this will blit from gpu memory to staging
+		/// memory, ideally then on a later frame you call blitStagingToMemory to get the
+		/// texture from staging to main memory very quickly. Will not work if isOptimizedReadbackEnabled
+		/// is false.
+		void blitToStaging();
+
+		/// Phase 2 of an optimized readback, this blits from the staging memory to
+		/// main memory, will not work if isOptimizedReadbackEnabled is false.
+		void blitStagingToMemory(const PixelBox &dst);
     protected:
         // In case this is a texture level
         GLenum mTarget;
@@ -121,6 +141,10 @@ namespace Ogre {
         SliceTRT mSliceTRT;
 
         GLSupport& mGLSupport;
+
+		//Texture copying, is a pointer so it can be null
+		bool mOptimizedReadbackEnabled;
+		GLuint mCopyBufferId;
     };
      /** Renderbuffer surface.  Needs FBO extension.
      */

@@ -46,6 +46,7 @@ namespace Ogre {
             mNumRequestedMipmaps(0),
             mNumMipmaps(0),
             mMipmapsHardwareGenerated(false),
+			mAllowMipmapGeneration(true),
             mGamma(1.0f),
             mHwGamma(false),
             mFSAA(0),

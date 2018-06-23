@@ -146,7 +146,7 @@ namespace Ogre {
                 memcpy(scaled.data, src.data, srcSize);
                 PixelUtil::bulkPixelConversion(src, scaled);
             }
-#if OGRE_PLATFORM != OGRE_PLATFORM_APPLE_IOS
+#if OGRE_PLATFORM != OGRE_PLATFORM_APPLE_IOS || !OGRE_APPLE_IOS_CLEVER_TEXTURE_FORMATS
             if (src.format == PF_A8R8G8B8)
             {
                 scaled.format = PF_A8B8G8R8;
@@ -593,7 +593,9 @@ namespace Ogre {
             GLenum format = GLES2PixelUtil::getClosestGLInternalFormat(mFormat);
             // Data must be consecutive and at beginning of buffer as PixelStorei not allowed
             // for compressed formats
-            if (dest.left == 0 && dest.top == 0)
+			//We are disabling this, it breaks upload and causes everything to be one huge texture
+			//If you get a conflict in this file here you don't want the first part of this if statement.
+            /*if (dest.left == 0 && dest.top == 0)
             {
                 OGRE_CHECK_GL_ERROR(glCompressedTexImage2D(mFaceTarget, mLevel,
                                        format,
@@ -604,13 +606,13 @@ namespace Ogre {
                                        data.data));
             }
             else
-            {
+            {*/
                 OGRE_CHECK_GL_ERROR(glCompressedTexSubImage2D(mFaceTarget, mLevel,
                                           dest.left, dest.top,
                                           dest.getWidth(), dest.getHeight(),
                                           format, static_cast<GLsizei>(data.getConsecutiveSize()),
                                           data.data));
-            }
+            //}
         }
         else if (mSoftwareMipmap)
         {

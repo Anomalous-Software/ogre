@@ -133,6 +133,8 @@ namespace Ogre
         /// Max distance to baseline of this (truetype) font
         int mTtfMaxBearingY;
 
+        String mVertexProgram;
+        String mFragmentProgram;
 
     public:
         typedef Ogre::uint32 CodePoint;
@@ -414,6 +416,36 @@ namespace Ogre
             when the Texture that this font creates needs to (re)load.
         */
         void loadResource(Resource* resource);
+
+        /** Sets the Vertex Program to use for the generated font material.
+        @param vp The name of the vertex program to use on this font's material.
+        */
+        inline void setVertexProgram(const String& vp)
+        {
+            mVertexProgram = vp;
+        }
+
+        /** Gets the Vertex Program to use for the generated font material.
+        */
+        inline const String& getVertexProgram(void) const
+        {
+            return mVertexProgram;
+        }
+
+        /** Sets the Fragment Program to use for the generated font material.
+        @param fp The name of the fragment program to use on this font's material.
+        */
+        inline void setFragmentProgram(const String& fp)
+        {
+            mFragmentProgram = fp;
+        }
+
+        /** Gets the Fragment Program to use for the generated font material.
+        */
+        inline const String& getFragmentProgram(void) const
+        {
+            return mFragmentProgram;
+        }
     };
     /** @} */
     /** @} */

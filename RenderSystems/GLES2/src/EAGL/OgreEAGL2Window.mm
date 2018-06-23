@@ -138,17 +138,34 @@ namespace Ogre {
     
 	void EAGL2Window::windowMovedOrResized()
 	{
-		CGRect frame = [mView frame];
-        mWidth = (unsigned int)frame.size.width * mContentScalingFactor;
-        mHeight = (unsigned int)frame.size.height * mContentScalingFactor;
+        CGRect frame = [mView frame];
+        
+        unsigned int w = (unsigned int)frame.size.width * mContentScalingFactor;
+        unsigned int h = (unsigned int)frame.size.height * mContentScalingFactor;
         mLeft = (int)frame.origin.x * mContentScalingFactor;
         mTop = ((int)frame.origin.y + (int)frame.size.height) * mContentScalingFactor;
-
+        
+        // Check if the window size or position really changed
+        if(mWidth == w && mHeight == h)
+            return;
+        
+        mContext->setCurrent();
+        
+        // Destroy and recreate the framebuffer with new dimensions
+        mContext->destroyFramebuffer();
+        
+        mWidth = w;
+        mHeight = h;
+        
+        mContext->createFramebuffer();
+        
         for (ViewportList::iterator it = mViewportList.begin(); it != mViewportList.end(); ++it)
         {
             (*it).second->_updateDimensions();
+            
         }
 	}
+
 
     void EAGL2Window::_beginUpdate(void)
     {
@@ -205,11 +222,12 @@ namespace Ogre {
     
         OgreAssert(mView != nil, "EAGL2Window: Failed to create view");
         
-        [mView setMWindowName:mName];
+        if([mView isKindOfClass: [EAGL2View class]])
+            [(EAGL2View *)mView setMWindowName:mName];
 
         OgreAssert([mView.layer isKindOfClass:[CAEAGLLayer class]], "EAGL2Window: View's Core Animation layer is not a CAEAGLLayer. This is a requirement for using OpenGL ES for drawing.");
         
-        CAEAGLLayer *eaglLayer = (CAEAGLLayer *)mView.layer;
+		CAEAGLLayer *eaglLayer = (CAEAGLLayer *)mView.layer;
         OgreAssert(eaglLayer != nil, "EAGL2Window: Failed to retrieve a pointer to the view's Core Animation layer");
 
         BOOL retainedBacking = NO;
@@ -255,7 +273,8 @@ namespace Ogre {
         if(!mUsingExternalViewController)
             [mWindow addSubview:mViewController.view];
         
-        mViewController.mGLSupport = mGLSupport;
+        if([mViewController isKindOfClass: [EAGL2ViewController class]])
+            ((EAGL2ViewController *)mViewController).mGLSupport = mGLSupport;
         
         if(!mUsingExternalViewController)
             mWindow.rootViewController = mViewController;
@@ -354,7 +373,7 @@ namespace Ogre {
         
             if ((opt = miscParams->find("externalViewHandle")) != end)
             {
-                mView = (EAGL2View *)StringConverter::parseUnsignedLong(opt->second);
+                mView = (UIView *)StringConverter::parseUnsignedLong(opt->second);
                 CGRect b = [mView bounds];
                 mWidth = b.size.width;
                 mHeight = b.size.height;
@@ -364,9 +383,9 @@ namespace Ogre {
         
             if ((opt = miscParams->find("externalViewControllerHandle")) != end)
             {
-                mViewController = (EAGL2ViewController *)StringConverter::parseUnsignedLong(opt->second);
+                mViewController = (UIViewController *)StringConverter::parseUnsignedLong(opt->second);
                 if(mViewController.view != nil)
-                    mView = (EAGL2View *)mViewController.view;
+                    mView = mViewController.view;
                 mUsingExternalViewController = true;
                 LogManager::getSingleton().logMessage("iOS: Using an external view controller handle");
             }

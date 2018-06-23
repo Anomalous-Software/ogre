@@ -199,7 +199,8 @@ GLTextureBuffer::GLTextureBuffer(GLSupport& support, const String &baseName, GLe
                                  bool writeGamma, uint fsaa):
     GLHardwarePixelBuffer(0, 0, 0, PF_UNKNOWN, usage),
     mTarget(target), mFaceTarget(0), mTextureID(id), mFace(face), mLevel(level),
-    mSoftwareMipmap(crappyCard), mHwGamma(writeGamma), mSliceTRT(0), mGLSupport(support)
+    mSoftwareMipmap(crappyCard), mHwGamma(writeGamma), mSliceTRT(0), mGLSupport(support),
+	mOptimizedReadbackEnabled(false)
 {
     // devise mWidth, mHeight and mDepth and mFormat
     GLint value = 0;
@@ -279,6 +280,7 @@ GLTextureBuffer::GLTextureBuffer(GLSupport& support, const String &baseName, GLe
 }
 GLTextureBuffer::~GLTextureBuffer()
 {
+	setOptimizedReadbackEnabled(false);
     if(mUsage & TU_RENDERTARGET)
     {
         // Delete all render targets that are not yet deleted via _clearSliceRTT because the rendertarget
@@ -326,9 +328,13 @@ void GLTextureBuffer::upload(const PixelBox &data, const Image::Box &dest)
                 break;
             case GL_TEXTURE_2D:
             case GL_TEXTURE_CUBE_MAP:
+				//Comment code below was causing problems updating sub images for dds textures,
+				//doing just the non-preferred steps from the original code makes this work correctly.
+				//This is left as a reference if you get a conflict merging this file ever probably
+				//take what ogre has and then see if the virtual textures still update as expected
                 // some systems (e.g. old Apple) don't like compressed subimage calls
                 // so prefer non-sub versions
-                if (dest.left == 0 && dest.top == 0)
+                /*if (dest.left == 0 && dest.top == 0)
                 {
                     glCompressedTexImage2DARB(mFaceTarget, mLevel,
                         format,
@@ -339,13 +345,13 @@ void GLTextureBuffer::upload(const PixelBox &data, const Image::Box &dest)
                         data.data);
                 }
                 else
-                {
+                {*/
                     glCompressedTexSubImage2DARB(mFaceTarget, mLevel, 
                         dest.left, dest.top, 
                         dest.getWidth(), dest.getHeight(),
                         format, data.getConsecutiveSize(),
                         data.data);
-                }
+                //}
                 break;
             case GL_TEXTURE_3D:
             case GL_TEXTURE_2D_ARRAY_EXT:
@@ -784,6 +790,85 @@ void GLTextureBuffer::blitFromTexture(GLTextureBuffer *src, const Image::Box &sr
     glPopAttrib();
     glDeleteTextures(1, &tempTex);
 }
+
+//-----------------------------------------------------------------------------  
+void GLTextureBuffer::setOptimizedReadbackEnabled(bool enabled)
+{
+#if OGRE_PLATFORM == OGRE_PLATFORM_APPLE
+    return; //Don't support this on OSX
+#endif
+    
+	if (enabled != isOptimizedReadbackEnabled())
+	{
+		if (enabled)
+		{
+			glGenBuffers(1, &mCopyBufferId);
+			glBindBuffer(GL_PIXEL_PACK_BUFFER, mCopyBufferId);
+			glBufferData(GL_PIXEL_PACK_BUFFER, mSizeInBytes, NULL, GL_STREAM_READ);
+			glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+		}
+		else
+		{
+			glDeleteBuffers(1, &mCopyBufferId);
+		}
+		mOptimizedReadbackEnabled = enabled;
+	}
+}
+
+//-----------------------------------------------------------------------------  
+void GLTextureBuffer::blitToStaging()
+{
+	if(isOptimizedReadbackEnabled())
+	{
+		mGLSupport.getStateCacheManager()->bindGLTexture(mTarget, mTextureID);
+		if (mWidth != mRowPitch)
+		{
+			glPixelStorei(GL_PACK_ROW_LENGTH, mRowPitch);
+		}
+		if (mWidth * mHeight != mSlicePitch)
+		{
+			glPixelStorei(GL_PACK_IMAGE_HEIGHT, (mSlicePitch / mWidth));
+		}
+		if ((mWidth * PixelUtil::getNumElemBytes(mFormat)) & 3)
+		{
+			// Standard alignment of 4 is not right
+			glPixelStorei(GL_PACK_ALIGNMENT, 1);
+		}
+
+		//Read the texture async
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, mCopyBufferId);
+		glGetTexImage(mFaceTarget, mLevel, GLPixelUtil::getGLOriginFormat(mFormat), GLPixelUtil::getGLOriginDataType(mFormat), 0);
+
+		// Restore defaults
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+		glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+		glPixelStorei(GL_PACK_IMAGE_HEIGHT, 0);
+		glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
+		glPixelStorei(GL_PACK_ALIGNMENT, 4);
+	}
+}
+
+//-----------------------------------------------------------------------------
+void GLTextureBuffer::blitStagingToMemory(const PixelBox &dst)
+{
+	if (isOptimizedReadbackEnabled())
+	{
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, mCopyBufferId);
+		GLvoid *ptr = glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, mSizeInBytes, GL_MAP_READ_BIT);
+
+		PixelBox glBox(mWidth, mHeight, mDepth, mFormat, ptr);
+		PixelUtil::bulkPixelConversion(glBox, dst);
+
+		// Restore defaults
+		glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+	}
+	else
+	{
+		HardwarePixelBuffer::blitStagingToMemory(dst); //Do default action if not optimized
+	}
+}
+
 //-----------------------------------------------------------------------------  
 /// blitFromMemory doing hardware trilinear scaling
 void GLTextureBuffer::blitFromMemory(const PixelBox &src_orig, const Image::Box &dstBox)

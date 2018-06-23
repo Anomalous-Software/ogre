@@ -247,6 +247,7 @@ namespace Ogre {
         virtual Real getViewportHeight() const;
         virtual Real getInverseViewportWidth() const;
         virtual Real getInverseViewportHeight() const;
+        virtual const ColourValue& getViewportBackgroundColour(void) const;
         virtual Vector3 getViewDirection() const;
         virtual Vector3 getViewSideVector() const;
         virtual Vector3 getViewUpVector() const;

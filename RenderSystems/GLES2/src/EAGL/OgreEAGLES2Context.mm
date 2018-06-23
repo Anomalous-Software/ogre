@@ -194,10 +194,25 @@ namespace Ogre {
 
     void EAGLES2Context::destroyFramebuffer()
     {
-        OGRE_CHECK_GL_ERROR(glDeleteFramebuffers(1, &mViewFramebuffer));
-        mViewFramebuffer = 0;
-        OGRE_CHECK_GL_ERROR(glDeleteRenderbuffers(1, &mViewRenderbuffer));
-        mViewRenderbuffer = 0;
+        if(mViewFramebuffer)
+        {
+            if(![mContext renderbufferStorage:GL_RENDERBUFFER fromDrawable:nil])
+            {
+                glGetError();
+                OGRE_EXCEPT(Exception::ERR_RENDERINGAPI_ERROR,
+                            "Failed to bind the drawable to a renderbuffer object",
+                            __FUNCTION__);
+            }
+            
+            OGRE_CHECK_GL_ERROR(glDeleteFramebuffers(1, &mViewFramebuffer));
+            mViewFramebuffer = 0;
+        }
+        
+        if(mViewRenderbuffer)
+        {
+            OGRE_CHECK_GL_ERROR(glDeleteRenderbuffers(1, &mViewRenderbuffer));
+            mViewRenderbuffer = 0;
+        }
         
         if(mSampleRenderbuffer)
         {

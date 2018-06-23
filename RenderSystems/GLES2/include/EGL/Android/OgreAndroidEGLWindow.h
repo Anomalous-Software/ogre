@@ -47,6 +47,7 @@ namespace Ogre {
     private:
         uint mMaxBufferSize;
         uint mMinBufferSize;
+		uint mMinDepthSize;
         uint mMaxDepthSize;
         uint mMaxStencilSize;
         uint mMSAA;
@@ -71,6 +72,12 @@ namespace Ogre {
         
         void _destroyInternalResources();
         void _createInternalResources(NativeWindowType window, AConfiguration* config);
+
+        /*
+         * Ensure that this window's context is the active context, if you are using windowMovedOrResized every frame you do not need to
+         * call this function, otherwise call this to set just the context active without doing a resize.
+         */
+        void ensureContextActive();
     };
 }
 

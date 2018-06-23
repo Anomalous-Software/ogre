@@ -72,7 +72,7 @@ namespace Ogre {
 		ID3D11Texture2D * GetTex2D() { return mp2DTex.Get(); };
 		ID3D11Texture3D	* GetTex3D() { return mp3DTex.Get(); };
 
-		bool HasAutoMipMapGenerationEnabled() const { return mAutoMipMapGeneration; }
+		bool HasAutoMipMapGenerationEnabled() const { return mAllowMipmapGeneration && mAutoMipMapGeneration; }
 
 	protected:
 		TextureUsage _getTextureUsage() { return static_cast<TextureUsage>(mUsage); }

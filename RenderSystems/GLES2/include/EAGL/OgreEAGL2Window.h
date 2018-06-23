@@ -67,8 +67,8 @@ namespace Ogre {
             EAGLES2Context* mContext;
 #ifdef __OBJC__
             NativeWindowType mWindow;
-            EAGL2View *mView;
-            EAGL2ViewController *mViewController;
+            UIView *mView;
+            UIViewController *mViewController;
 #endif
 
             void switchFullScreen(bool fullscreen) { }

@@ -36,6 +36,7 @@ if(WIN32) # The only platform it makes sense to check for DirectX9 SDK
     "C:/apps/Microsoft DirectX SDK*"
     "C:/Program Files/Microsoft DirectX SDK*"
 	"$ENV{ProgramFiles}/Microsoft DirectX SDK*"
+	"C:/Program Files (x86)/Windows Kits/8.1"
   )
 
   create_search_paths(DirectX9)
@@ -55,7 +56,7 @@ if(WIN32) # The only platform it makes sense to check for DirectX9 SDK
     set(DirectX9_LIBPATH_SUFFIX "x86")
   endif(CMAKE_CL_64)
   find_library(DirectX9_LIBRARY NAMES d3d9 HINTS ${DirectX9_LIB_SEARCH_PATH} PATH_SUFFIXES ${DirectX9_LIBPATH_SUFFIX})
-  find_library(DirectX9_D3DX9_LIBRARY NAMES d3dx9 HINTS ${DirectX9_LIB_SEARCH_PATH} PATH_SUFFIXES ${DirectX9_LIBPATH_SUFFIX})
+  # find_library(DirectX9_D3DX9_LIBRARY NAMES d3dx9 HINTS ${DirectX9_LIB_SEARCH_PATH} PATH_SUFFIXES ${DirectX9_LIBPATH_SUFFIX})
   find_library(DirectX9_DXGUID_LIBRARY NAMES dxguid HINTS ${DirectX9_LIB_SEARCH_PATH} PATH_SUFFIXES ${DirectX9_LIBPATH_SUFFIX})
   
   findpkg_finish(DirectX9)

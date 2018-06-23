@@ -75,7 +75,7 @@ namespace Ogre
 
         AutoConstantDefinition(ACT_RENDER_TARGET_FLIPPING,          "render_target_flipping",         1, ET_REAL, ACDT_NONE),
         AutoConstantDefinition(ACT_VERTEX_WINDING,          "vertex_winding",         1, ET_REAL, ACDT_NONE),
-
+        
         AutoConstantDefinition(ACT_FOG_COLOUR,                    "fog_colour",                   4, ET_REAL, ACDT_NONE),
         AutoConstantDefinition(ACT_FOG_PARAMS,                    "fog_params",                   4, ET_REAL, ACDT_NONE),
 
@@ -164,6 +164,7 @@ namespace Ogre
         AutoConstantDefinition(ACT_INVERSE_VIEWPORT_WIDTH,        "inverse_viewport_width",       1, ET_REAL, ACDT_NONE),
         AutoConstantDefinition(ACT_INVERSE_VIEWPORT_HEIGHT,       "inverse_viewport_height",      1, ET_REAL, ACDT_NONE),
         AutoConstantDefinition(ACT_VIEWPORT_SIZE,                 "viewport_size",                4, ET_REAL, ACDT_NONE),
+        AutoConstantDefinition(ACT_VIEWPORT_BACKGROUND_COLOUR,    "viewport_background_colour",   4, ET_REAL, ACDT_NONE),
         AutoConstantDefinition(ACT_VIEW_DIRECTION,                "view_direction",               3, ET_REAL, ACDT_NONE),
         AutoConstantDefinition(ACT_VIEW_SIDE_VECTOR,              "view_side_vector",             3, ET_REAL, ACDT_NONE),
         AutoConstantDefinition(ACT_VIEW_UP_VECTOR,                "view_up_vector",               3, ET_REAL, ACDT_NONE),
@@ -1416,6 +1417,7 @@ namespace Ogre
         case ACT_PASS_NUMBER:
         case ACT_TEXTURE_MATRIX:
         case ACT_LOD_CAMERA_POSITION:
+        case ACT_VIEWPORT_BACKGROUND_COLOUR:
 
             return (uint16)GPV_GLOBAL;
 
@@ -3038,7 +3040,8 @@ namespace Ogre
                                           source->getSpotlightViewProjMatrix(l),i->elementCount);
                     }
                     break;
-
+                case ACT_VIEWPORT_BACKGROUND_COLOUR:
+                    _writeRawConstant(i->physicalIndex, source->getViewportBackgroundColour());
                 default:
                     break;
                 };

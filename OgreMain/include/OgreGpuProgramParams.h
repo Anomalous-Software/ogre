@@ -1351,6 +1351,10 @@ namespace Ogre {
             /** Binds custom per-light constants to the shaders. */
             ACT_LIGHT_CUSTOM,
 
+            /** Current viewport background color as a float4.
+            */
+            ACT_VIEWPORT_BACKGROUND_COLOUR,
+
             ACT_UNKNOWN = 999
         };
 

@@ -206,6 +206,16 @@ namespace Ogre
             // Use add if no alpha (assume black background)
             mMaterial->setSceneBlending(SBT_ADD);
         }
+
+        if(!mVertexProgram.empty())
+        {
+            mMaterial->getTechnique(0)->getPass(0)->setVertexProgram(mVertexProgram);
+        }
+
+        if(!mFragmentProgram.empty())
+        {
+            mMaterial->getTechnique(0)->getPass(0)->setFragmentProgram(mFragmentProgram);
+        }
     }
     //---------------------------------------------------------------------
     void Font::unloadImpl()

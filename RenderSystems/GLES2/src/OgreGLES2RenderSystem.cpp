@@ -285,7 +285,8 @@ namespace Ogre {
                mGLSupport->checkExtension("WEBGL_compressed_texture_etc1"))
                 rsc->setCapability(RSC_TEXTURE_COMPRESSION_ETC1);
 
-            if(gleswIsSupported(3, 0))
+            if(gleswIsSupported(3, 0) ||
+                mDriverVersion.major >= 3)
                 rsc->setCapability(RSC_TEXTURE_COMPRESSION_ETC2);
 
             if(mGLSupport->checkExtension("GL_AMD_compressed_ATC_texture") ||
@@ -409,8 +410,8 @@ namespace Ogre {
 #endif
 
         // ES 3 always supports NPOT textures
-#if OGRE_PLATFORM != OGRE_PLATFORM_ANDROID && OGRE_PLATFORM != OGRE_PLATFORM_EMSCRIPTEN
-        if(mGLSupport->checkExtension("GL_OES_texture_npot") || mGLSupport->checkExtension("GL_ARB_texture_non_power_of_two") || gleswIsSupported(3, 0))
+#if OGRE_PLATFORM != OGRE_PLATFORM_EMSCRIPTEN
+        if (mGLSupport->checkExtension("GL_OES_texture_npot") || mGLSupport->checkExtension("GL_ARB_texture_non_power_of_two") || gleswIsSupported(3, 0))
         {
             rsc->setCapability(RSC_NON_POWER_OF_2_TEXTURES);
             rsc->setNonPOW2TexturesLimited(false);
@@ -418,6 +419,8 @@ namespace Ogre {
         else
 #endif
         {
+            //Limited npot texture support always in gles2
+            rsc->setCapability(RSC_NON_POWER_OF_2_TEXTURES);
             rsc->setNonPOW2TexturesLimited(true);
         }
 
@@ -1132,7 +1135,7 @@ namespace Ogre {
         // this is mostly to avoid holding bound programs that might get deleted
         // outside via the resource manager
         unbindGpuProgram(GPT_VERTEX_PROGRAM);
-		unbindGpuProgram(GPT_FRAGMENT_PROGRAM);
+        unbindGpuProgram(GPT_FRAGMENT_PROGRAM);
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_APPLE_IOS
         static_cast<EAGLES2Context*>(mMainContext)->bindSampleFramebuffer();
@@ -2340,6 +2343,8 @@ namespace Ogre {
         mStateCacheManager->clearCache();
         _setViewport(NULL);
         _setRenderTarget(win);
+
+        fireEvent("DeviceRestored");
     }
     
     GLES2ManagedResourceManager* GLES2RenderSystem::getResourceManager()

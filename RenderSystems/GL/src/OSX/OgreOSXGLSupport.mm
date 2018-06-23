@@ -290,7 +290,7 @@ void OSXGLSupport::addConfig( void )
 
     optMacAPI.name = "macAPI";
     optMacAPI.possibleValues.push_back( "cocoa" );
-#ifndef __LP64__
+#if !defined __LP64__ && defined USE_CARBON
 	optMacAPI.possibleValues.push_back( "carbon" );
     optMacAPI.currentValue = "carbon";
 #else
@@ -429,7 +429,7 @@ RenderWindow* OSXGLSupport::newWindow( const String &name, unsigned int width, u
 
 		return window;
 	}
-#ifndef __LP64__
+#if !defined __LP64__ && defined USE_CARBON
     else
     {
         // Otherwise default to Carbon

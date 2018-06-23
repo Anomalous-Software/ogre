@@ -1092,6 +1092,7 @@ namespace Ogre
             rsc->setCapability(RSC_NON_POWER_OF_2_TEXTURES);
             rsc->setCapability(RSC_HWRENDER_TO_TEXTURE_3D);
             rsc->setCapability(RSC_TEXTURE_1D);
+			rsc->setCapability(RSC_TEXTURE_COMPRESSION_BC4_BC5);
             rsc->setCapability(RSC_TEXTURE_COMPRESSION_BC6H_BC7);
             rsc->setCapability(RSC_COMPLETE_TEXTURE_BINDING);
         }
@@ -2278,9 +2279,14 @@ namespace Ogre
         else
         {
             // if swapchain was created with DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL we need to reestablish render target views
-            D3D11RenderWindowBase* d3d11Window = dynamic_cast<D3D11RenderWindowBase*>(vp->getTarget());
-            if(d3d11Window && d3d11Window->_shouldRebindBackBuffer())
-                _setRenderTargetViews();
+			// ___ This has been removed, the typecast is not valid always and causes errors when we render to texture.
+            //if(static_cast<D3D11RenderWindowBase*>(vp->getTarget())->_shouldRebindBackBuffer())
+            //    _setRenderTargetViews();
+
+			//Below is from ogre head
+            //D3D11RenderWindowBase* d3d11Window = dynamic_cast<D3D11RenderWindowBase*>(vp->getTarget());
+            //if(d3d11Window && d3d11Window->_shouldRebindBackBuffer())
+                //_setRenderTargetViews();
         }
     }
     //---------------------------------------------------------------------

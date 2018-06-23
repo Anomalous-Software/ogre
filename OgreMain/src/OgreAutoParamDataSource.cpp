@@ -1019,6 +1019,11 @@ namespace Ogre {
         return 1.0f/mCurrentViewport->getActualHeight(); 
     }
     //-----------------------------------------------------------------------------
+    const ColourValue& AutoParamDataSource::getViewportBackgroundColour(void) const
+    {
+        return mCurrentViewport->getBackgroundColour();
+    }
+    //-----------------------------------------------------------------------------
     Vector3 AutoParamDataSource::getViewDirection() const
     {
         return mCurrentCamera->getDerivedDirection();

@@ -61,7 +61,7 @@ namespace Ogre {
 
         String tmpStr = (const char*)pcVer;
         LogManager::getSingleton().logMessage("GL_VERSION = " + tmpStr);
-        mVersion = tmpStr.substr(0, tmpStr.find(" "));
+        mVersion = tmpStr.substr(10, tmpStr.find(" "));
 
         // Get vendor
         const GLubyte* pcVendor = glGetString(GL_VENDOR);

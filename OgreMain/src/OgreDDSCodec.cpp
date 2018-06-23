@@ -257,6 +257,8 @@ namespace Ogre {
         case PF_FLOAT32_R:
         case PF_FLOAT16_RGBA:
         case PF_FLOAT32_RGBA:
+		case PF_DXT5:
+		case PF_DXT1:
             break;
         default:
             // No crazy FOURCC or 565 et al. file formats at this stage

@@ -1,7 +1,7 @@
 /*
 -----------------------------------------------------------------------------
 This source file is part of OGRE
-    (Object-oriented Graphics Rendering Engine)
+(Object-oriented Graphics Rendering Engine)
 For the latest info, see http://www.ogre3d.org/
 
 Copyright (c) 2000-2014 Torus Knot Software Ltd
@@ -41,6 +41,8 @@ THE SOFTWARE.
 #include "OgreGLES2ManagedResourceManager.h"
 #include "OgreViewport.h"
 
+#include <android/native_window.h>
+
 #include <iostream>
 #include <algorithm>
 #include <climits>
@@ -48,13 +50,14 @@ THE SOFTWARE.
 namespace Ogre {
     AndroidEGLWindow::AndroidEGLWindow(AndroidEGLSupport *glsupport)
         : EGLWindow(glsupport),
-          mMaxBufferSize(32),
-          mMinBufferSize(16),
-          mMaxDepthSize(16),
-          mMaxStencilSize(0),
-          mMSAA(0),
-          mCSAA(0),
-          mPreserveContext(false)
+        mMaxBufferSize(32),
+        mMinBufferSize(16),
+		mMinDepthSize(16),
+        mMaxDepthSize(16),
+        mMaxStencilSize(0),
+        mMSAA(0),
+        mCSAA(0),
+        mPreserveContext(false)
     {
     }
 
@@ -67,7 +70,7 @@ namespace Ogre {
         return new AndroidEGLContext(mEglDisplay, mGLSupport, mEglConfig, mEglSurface);
     }
 
-    void AndroidEGLWindow::getLeftAndTopFromNativeWindow( int & left, int & top, uint width, uint height )
+    void AndroidEGLWindow::getLeftAndTopFromNativeWindow(int & left, int & top, uint width, uint height)
     {
         // We don't have a native window.... but I think all android windows are origined
         left = top = 0;
@@ -77,11 +80,11 @@ namespace Ogre {
     {
     }
 
-    void AndroidEGLWindow::createNativeWindow( int &left, int &top, uint &width, uint &height, String &title )
+    void AndroidEGLWindow::createNativeWindow(int &left, int &top, uint &width, uint &height, String &title)
     {
     }
 
-    void AndroidEGLWindow::reposition( int left, int top )
+    void AndroidEGLWindow::reposition(int left, int top)
     {
     }
 
@@ -91,31 +94,48 @@ namespace Ogre {
 
     void AndroidEGLWindow::windowMovedOrResized()
     {
-        if(mActive)
-        {		
+        if (mActive)
+        {
             // When using GPU rendering for Android UI the os creates a context in the main thread
             // Now we have 2 choices create OGRE in its own thread or set our context current before doing
             // anything else. I put this code here because this function called before any rendering is done.
             // Because the events for screen rotation / resizing did not worked on all devices it is the best way
             // to query the correct dimensions.
-            mContext->setCurrent(); 
-            eglQuerySurface(mEglDisplay, mEglSurface, EGL_WIDTH, (EGLint*)&mWidth);
-            eglQuerySurface(mEglDisplay, mEglSurface, EGL_HEIGHT, (EGLint*)&mHeight);
-            
+            mContext->setCurrent();
+            //eglQuerySurface(mEglDisplay, mEglSurface, EGL_WIDTH, (EGLint*)&mWidth);
+            //eglQuerySurface(mEglDisplay, mEglSurface, EGL_HEIGHT, (EGLint*)&mHeight);
+
+            //This is a customization in our render version, since we use this funciton to poll it will be up
+            //to date with the correct size when ogre is resizing. This works for totally full screen apps,
+            //but might be an issue otherwise.
+            mWidth = ANativeWindow_getWidth(mWindow);
+            mHeight = ANativeWindow_getHeight(mWindow);
+
             // Notify viewports of resize
             ViewportList::iterator it = mViewportList.begin();
-            while( it != mViewportList.end() )
+            while (it != mViewportList.end())
                 (*it++).second->_updateDimensions();
         }
     }
-    
+
+    void AndroidEGLWindow::ensureContextActive()
+    {
+        if (mActive)
+        {
+            // When using GPU rendering for Android UI the os creates a context in the main thread
+            // Now we have 2 choices create OGRE in its own thread or set our context current before doing
+            // anything else. This provides an alternative strategy for detecting window size changes
+            mContext->setCurrent();
+        }
+    }
+
     void AndroidEGLWindow::switchFullScreen(bool fullscreen)
     {
-    
+
     }
-    
+
     void AndroidEGLWindow::create(const String& name, uint width, uint height,
-                               bool fullScreen, const NameValuePairList *miscParams)
+        bool fullScreen, const NameValuePairList *miscParams)
     {
         mName = name;
         mWidth = width;
@@ -146,52 +166,58 @@ namespace Ogre {
                 eglContext = eglGetCurrentContext();
                 mEglSurface = eglGetCurrentSurface(EGL_DRAW);
             }
-            
-            
-            if((opt = miscParams->find("externalWindowHandle")) != end)
+
+
+            if ((opt = miscParams->find("externalWindowHandle")) != end)
             {
                 mWindow = (ANativeWindow*)(Ogre::StringConverter::parseSizeT(opt->second));
             }
-            
-            if((opt = miscParams->find("androidConfig")) != end)
+
+            if ((opt = miscParams->find("androidConfig")) != end)
             {
                 config = (AConfiguration*)(Ogre::StringConverter::parseSizeT(opt->second));
             }
-            
+
             int ctxHandle = -1;
-            if((miscParams->find("externalGLContext")) != end)
+            if ((miscParams->find("externalGLContext")) != end)
             {
                 mIsExternalGLControl = true;
                 ctxHandle = Ogre::StringConverter::parseInt(opt->second);
             }
-            
-            if((opt = miscParams->find("maxColourBufferSize")) != end)
+
+            if ((opt = miscParams->find("maxColourBufferSize")) != end)
             {
                 mMaxBufferSize = Ogre::StringConverter::parseInt(opt->second);
             }
-            
-            if((opt = miscParams->find("maxDepthBufferSize")) != end)
+
+			if ((opt = miscParams->find("minDepthBufferSize")) != end)
+			{
+				mMinDepthSize = Ogre::StringConverter::parseInt(opt->second);
+				if (mMinDepthSize > mMaxDepthSize) mMinDepthSize = mMaxDepthSize;
+			}
+
+            if ((opt = miscParams->find("maxDepthBufferSize")) != end)
             {
                 mMaxDepthSize = Ogre::StringConverter::parseInt(opt->second);
             }
-            
-            if((opt = miscParams->find("maxStencilBufferSize")) != end)
+
+            if ((opt = miscParams->find("maxStencilBufferSize")) != end)
             {
                 mMaxStencilSize = Ogre::StringConverter::parseInt(opt->second);
             }
 
-            if((opt = miscParams->find("minColourBufferSize")) != end)
+            if ((opt = miscParams->find("minColourBufferSize")) != end)
             {
                 mMinBufferSize = Ogre::StringConverter::parseInt(opt->second);
                 if (mMinBufferSize > mMaxBufferSize) mMinBufferSize = mMaxBufferSize;
             }
 
-            if((opt = miscParams->find("MSAA")) != end)
+            if ((opt = miscParams->find("MSAA")) != end)
             {
                 mMSAA = Ogre::StringConverter::parseInt(opt->second);
             }
-            
-            if((opt = miscParams->find("CSAA")) != end)
+
+            if ((opt = miscParams->find("CSAA")) != end)
             {
                 mCSAA = Ogre::StringConverter::parseInt(opt->second);
             }
@@ -202,38 +228,38 @@ namespace Ogre {
                 preserveContextOpt = true;
             }
         }
-        
+
         initNativeCreatedWindow(miscParams);
-        
+
         if (mEglSurface)
         {
-            mEglConfig = mGLSupport->getGLConfigFromDrawable (mEglSurface, &width, &height);
+            mEglConfig = mGLSupport->getGLConfigFromDrawable(mEglSurface, &width, &height);
         }
-        
+
         if (!mEglConfig && eglContext)
         {
             mEglConfig = mGLSupport->getGLConfigFromContext(eglContext);
-            
+
             if (!mEglConfig)
             {
                 // This should never happen.
                 OGRE_EXCEPT(Exception::ERR_RENDERINGAPI_ERROR,
-                            "Unexpected failure to determine a EGLFBConfig",
-                            "EGLWindow::create");
+                    "Unexpected failure to determine a EGLFBConfig",
+                    "EGLWindow::create");
             }
         }
-        
+
         mIsExternal = (mEglSurface != 0);
-        
+
         if (!mEglConfig)
         {
             _createInternalResources(mWindow, config);
             mHwGamma = false;
         }
-        
+
         mContext = createEGLContext();
         mContext->setCurrent();
-               
+
         eglQuerySurface(mEglDisplay, mEglSurface, EGL_WIDTH, (EGLint*)&mWidth);
         eglQuerySurface(mEglDisplay, mEglSurface, EGL_HEIGHT, (EGLint*)&mHeight);
         EGL_CHECK_ERROR
@@ -246,7 +272,7 @@ namespace Ogre {
 
     void AndroidEGLWindow::_destroyInternalResources()
     {
-        if(mClosed)
+        if (mClosed)
             return;
         
         if (!mPreserveContext)
@@ -259,22 +285,22 @@ namespace Ogre {
         
         eglDestroySurface(mEglDisplay, mEglSurface);
         EGL_CHECK_ERROR
-        
+
         eglTerminate(mEglDisplay);
         EGL_CHECK_ERROR
-        
+
         mEglDisplay = 0;
         mEglSurface = 0;
-        
+
         mActive = false;
         mVisible = false;
         mClosed = true;
     }
-    
+
     void AndroidEGLWindow::_createInternalResources(NativeWindowType window, AConfiguration* config)
     {
         mWindow = window;
-        
+
         if (mPreserveContext)
         {
             mEglDisplay = mGLSupport->getGLDisplay();
@@ -283,10 +309,11 @@ namespace Ogre {
         }
         else
         {
+
             int minAttribs[] = {
                 EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
                 EGL_BUFFER_SIZE, mMinBufferSize,
-                EGL_DEPTH_SIZE, 16,
+                EGL_DEPTH_SIZE, mMinDepthSize,
                 EGL_NONE
             };
 
@@ -305,7 +332,7 @@ namespace Ogre {
                     int CSAAminAttribs[] = {
                         EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
                         EGL_BUFFER_SIZE, mMinBufferSize,
-                        EGL_DEPTH_SIZE, 16,
+                        EGL_DEPTH_SIZE, mMinDepthSize,
                         EGL_COVERAGE_BUFFERS_NV, 1,
                         EGL_COVERAGE_SAMPLES_NV, mCSAA,
                         EGL_NONE
@@ -334,7 +361,7 @@ namespace Ogre {
                     int MSAAminAttribs[] = {
                         EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
                         EGL_BUFFER_SIZE, mMinBufferSize,
-                        EGL_DEPTH_SIZE, 16,
+                        EGL_DEPTH_SIZE, mMinDepthSize,
                         EGL_SAMPLE_BUFFERS, 1,
                         EGL_SAMPLES, mMSAA,
                         EGL_NONE

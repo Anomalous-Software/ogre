@@ -411,13 +411,14 @@ namespace Ogre
         // unmap the temp buffer
         mDevice.GetImmediateContext()->Unmap(backbufferStaging.Get(), 0);
     }
-	//---------------------------------------------------------------------
+    //---------------------------------------------------------------------
 #if OGRE_NO_QUAD_BUFFER_STEREO == 0
-	void D3D11RenderWindowBase::_validateStereo()
-	{
-		mStereoEnabled = D3D11StereoDriverBridge::getSingleton().isStereoEnabled(this->getName());
-	}
+    void D3D11RenderWindowBase::_validateStereo()
+    {
+        mStereoEnabled = D3D11StereoDriverBridge::getSingleton().isStereoEnabled(this->getName());
+    }
 #endif
+	//---------------------------------------------------------------------
 #pragma endregion
 
     //---------------------------------------------------------------------
@@ -714,6 +715,7 @@ namespace Ogre
         String border = "";
         bool outerSize = false;
         bool enableDoubleClick = false;
+        bool noAltEnter = false;
 
         if(miscParams)
         {
@@ -770,6 +772,9 @@ namespace Ogre
             opt = miscParams->find("enableDoubleClick");
             if(opt != miscParams->end())
                 enableDoubleClick = StringConverter::parseBool(opt->second);
+            opt = miscParams->find("noAltEnter");
+            if (opt != miscParams->end())
+                noAltEnter = StringConverter::parseBool(opt->second);
 
         }
 		
@@ -910,7 +915,13 @@ namespace Ogre
 
         _createSwapChain();
         _createSizeDependedD3DResources();
-        mDevice.GetDXGIFactory()->MakeWindowAssociation(mHWnd, NULL);
+        UINT windowAssocFlags = NULL;
+        if (noAltEnter)
+        {
+            windowAssocFlags |= DXGI_MWA_NO_ALT_ENTER;
+        }
+
+		mDevice.GetDXGIFactory()->MakeWindowAssociation(mHWnd, windowAssocFlags);
         setHidden(mHidden);
 
         D3D11RenderSystem* rsys = static_cast<D3D11RenderSystem*>(Root::getSingleton().getRenderSystem());

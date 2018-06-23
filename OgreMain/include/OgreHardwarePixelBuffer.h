@@ -186,6 +186,38 @@ namespace Ogre {
         uint32 getDepth() const { return mDepth; }
         /// Gets the native pixel format of this buffer
         PixelFormat getFormat() const { return mFormat; }
+
+		/// Enable or disable optimized readback for this texture. This enables the use of
+		/// blitToStaging and blitStagingToMemory below.
+		virtual void setOptimizedReadbackEnabled(bool enabled)
+		{
+			//By default this does nothing, cannot optimize by default
+		}
+
+		/// Returns true if optimized readback is enabled, false if disabled.
+		virtual bool isOptimizedReadbackEnabled()
+		{
+			return false;
+		}
+
+		/// Phase 1 of an optimized readback, this will blit from gpu memory to staging
+		/// memory, ideally then on a later frame you call blitStagingToMemory to get the
+		/// texture from staging to main memory very quickly. Does nothing if 
+		/// isOptimizedReadbackEnabled is false.
+		virtual void blitToStaging()
+		{
+			//By default this does nothing, cannot optimize by default
+		}
+
+		/// Phase 2 of an optimized readback, this blits from the staging memory to
+		/// main memory. Will only provide a speedup if isOptimizedReadbackEnabled
+		/// is true, otherwise uses the default blitToMemory function. You will always
+		/// get some kind of results from this function.
+		virtual void blitStagingToMemory(const PixelBox &dst)
+		{
+			//By default we just do the normal blit, this provides no speedup
+			blitToMemory(dst);
+		}
     };
 
     /** Shared pointer implementation used to share pixel buffers. */

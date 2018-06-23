@@ -263,7 +263,26 @@ namespace Ogre
                 }
             }
         }
-
+        else if (attrib == "vertex_program_ref")
+        {
+            // Check params
+            if (params.size() != 2)
+            {
+                logBadAttrib(line, pFont);
+                return;
+            }
+            pFont->setVertexProgram(params[1]);
+        }
+        else if (attrib == "fragment_program_ref")
+        {
+            // Check params
+            if (params.size() != 2)
+            {
+                logBadAttrib(line, pFont);
+                return;
+            }
+            pFont->setFragmentProgram(params[1]);
+        }
     }
     //---------------------------------------------------------------------
     void FontManager::logBadAttrib(const String& line, FontPtr& pFont)

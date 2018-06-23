@@ -110,6 +110,14 @@ namespace Ogre  {
                  return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
             case PF_DXT5:
                  return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+			case PF_BC4_SNORM:
+				return GL_COMPRESSED_SIGNED_RED_RGTC1;
+			case PF_BC4_UNORM:
+				return GL_COMPRESSED_RED_RGTC1;
+			case PF_BC5_SNORM:
+				return GL_COMPRESSED_SIGNED_RG_RGTC2;
+			case PF_BC5_UNORM:
+				return GL_COMPRESSED_RG_RGTC2;
             default:
                 return 0;
         }
@@ -258,6 +266,14 @@ namespace Ogre  {
                     return GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
                 else
                     return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+			case PF_BC4_SNORM:
+				return GL_COMPRESSED_SIGNED_RED_RGTC1;
+			case PF_BC4_UNORM:
+				return GL_COMPRESSED_RED_RGTC1;
+			case PF_BC5_SNORM:
+				return GL_COMPRESSED_SIGNED_RG_RGTC2;
+			case PF_BC5_UNORM:
+				return GL_COMPRESSED_RG_RGTC2;
             default:
                 return GL_NONE;
         }
@@ -342,6 +358,14 @@ namespace Ogre  {
         case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
         case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
             return PF_DXT5;
+		case GL_COMPRESSED_SIGNED_RED_RGTC1:
+			return PF_BC4_SNORM;
+		case GL_COMPRESSED_RED_RGTC1:
+			return PF_BC4_UNORM;
+		case GL_COMPRESSED_SIGNED_RG_RGTC2:
+			return PF_BC5_SNORM;
+		case GL_COMPRESSED_RG_RGTC2:
+			return PF_BC5_UNORM;
         default:
             return PF_A8R8G8B8;
         };
